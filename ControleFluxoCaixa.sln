@@ -1,0 +1,74 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01-Domains", "01-Domains", "{9CBCB116-D390-45FF-8E6D-632F689D1797}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02-Infrastructure", "02-Infrastructure", "{EE749B69-BB7C-4640-861D-4F42F0AE28EA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02-Presentations", "02-Presentations", "{1BCEF7A0-1EB2-4C59-BBE2-D19A1141EAFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControleFluxoCaixa.Core", "src\ControleFluxoCaixa.Core\ControleFluxoCaixa.Core.csproj", "{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControleFluxoCaixa.Infrastructure", "src\ControleFluxoCaixa.Infrastructure\ControleFluxoCaixa.Infrastructure.csproj", "{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.1-Web", "3.1-Web", "{FFBDB8B1-0906-4D36-8584-1B022507729F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControleFluxoCaixa.Api", "src\ControleFluxoCaixa.Api\ControleFluxoCaixa.Api.csproj", "{BE744A21-294C-416A-8DDC-59E1BCD3DDC9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.2-Workers", "3.2-Workers", "{E9F47FB4-74D1-4638-B794-D43EC26DAA0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControleFluxoCaixa.Worker.Mensageria.Transacao", "src\ControleFluxoCaixa.Worker.Mensageria.Transacao\ControleFluxoCaixa.Worker.Mensageria.Transacao.csproj", "{F24420CE-7926-4C69-8F8E-C166F35C5100}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.3-Tests", "3.3-Tests", "{4F4B2C98-2D24-44E8-8987-D5E69440AED2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControleFluxoCaixa.Tests", "src\ControleFluxoCaixa.Tests\ControleFluxoCaixa.Tests.csproj", "{27901600-B910-49E3-9A71-4F53863C6AEF}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{141FF519-582B-4DBB-9930-AF0CEAE76DBC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE744A21-294C-416A-8DDC-59E1BCD3DDC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE744A21-294C-416A-8DDC-59E1BCD3DDC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE744A21-294C-416A-8DDC-59E1BCD3DDC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE744A21-294C-416A-8DDC-59E1BCD3DDC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F24420CE-7926-4C69-8F8E-C166F35C5100}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F24420CE-7926-4C69-8F8E-C166F35C5100}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F24420CE-7926-4C69-8F8E-C166F35C5100}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F24420CE-7926-4C69-8F8E-C166F35C5100}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27901600-B910-49E3-9A71-4F53863C6AEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27901600-B910-49E3-9A71-4F53863C6AEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27901600-B910-49E3-9A71-4F53863C6AEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27901600-B910-49E3-9A71-4F53863C6AEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{141FF519-582B-4DBB-9930-AF0CEAE76DBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{141FF519-582B-4DBB-9930-AF0CEAE76DBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{141FF519-582B-4DBB-9930-AF0CEAE76DBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{141FF519-582B-4DBB-9930-AF0CEAE76DBC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{48BC3660-5AF2-485F-BAF5-F4958CFAF3C9} = {9CBCB116-D390-45FF-8E6D-632F689D1797}
+		{1F0A40EE-FF71-45E3-AEF5-8A6E27A9980F} = {EE749B69-BB7C-4640-861D-4F42F0AE28EA}
+		{FFBDB8B1-0906-4D36-8584-1B022507729F} = {1BCEF7A0-1EB2-4C59-BBE2-D19A1141EAFF}
+		{BE744A21-294C-416A-8DDC-59E1BCD3DDC9} = {FFBDB8B1-0906-4D36-8584-1B022507729F}
+		{E9F47FB4-74D1-4638-B794-D43EC26DAA0D} = {1BCEF7A0-1EB2-4C59-BBE2-D19A1141EAFF}
+		{F24420CE-7926-4C69-8F8E-C166F35C5100} = {E9F47FB4-74D1-4638-B794-D43EC26DAA0D}
+		{4F4B2C98-2D24-44E8-8987-D5E69440AED2} = {1BCEF7A0-1EB2-4C59-BBE2-D19A1141EAFF}
+		{27901600-B910-49E3-9A71-4F53863C6AEF} = {4F4B2C98-2D24-44E8-8987-D5E69440AED2}
+	EndGlobalSection
+EndGlobal

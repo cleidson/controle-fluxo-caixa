@@ -1,0 +1,73 @@
+version: '3.9'
+
+services:
+  controlefluxocaixa.api:
+    image: ${DOCKER_REGISTRY-}controlefluxocaixaapi
+    build:
+      context: .
+      dockerfile: src/ControleFluxoCaixa.Api/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_SERVER=sql-primary
+      - DB_PORT=1434
+      - DB_USER=sa
+      - DB_PASSWORD=YourStrong!Password
+    networks:
+      - app-network
+    depends_on:
+      - sql-primary
+
+  controlefluxocaixa.worker.mensageria.transacao:
+    image: ${DOCKER_REGISTRY-}controlefluxocaixaworkermensageriatransacao
+    build:
+      context: .
+      dockerfile: src/ControleFluxoCaixa.Worker.Mensageria.Transacao/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DB_SERVER=sql-primary
+      - DB_PORT=1434
+      - DB_USER=sa
+      - DB_PASSWORD=YourStrong!Password
+    networks:
+      - app-network
+    depends_on:
+      - sql-primary
+
+  sql-primary:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql_primary
+    ports:
+      - "1434:1433"  # Mapeia 1434 no host para 1433 no container
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong!Password"
+    networks:
+      - app-network
+    volumes:
+      - sql-primary-data:/var/opt/mssql
+      - ./scripts/setup-primary.sql:/docker-entrypoint-initdb.d/setup-primary.sql
+
+  sql-secondary:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql_secondary
+    ports:
+      - "1435:1433"  # Mapeia 1435 no host para 1433 no container
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong!Password"
+    networks:
+      - app-network
+    volumes:
+      - sql-secondary-data:/var/opt/mssql
+      - ./scripts/setup-secondary.sql:/docker-entrypoint-initdb.d/setup-secondary.sql
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sql-primary-data:
+  sql-secondary-data:
