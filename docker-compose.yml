@@ -21,6 +21,7 @@ services:
       - app-network
     depends_on:
       - sql-primary
+      - rabbitmq
 
   controlefluxocaixa.worker.mensageria.transacao:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaworkermensageriatransacao
@@ -33,16 +34,19 @@ services:
       - DB_PORT=1434
       - DB_USER=sa
       - DB_PASSWORD=YourStrong!Password
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
     networks:
       - app-network
     depends_on:
       - sql-primary
+      - rabbitmq
 
   sql-primary:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sql_primary
     ports:
-      - "1434:1433"  # Mapeia 1434 no host para 1433 no container
+      - "1434:1433"
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password"
@@ -56,7 +60,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: sql_secondary
     ports:
-      - "1435:1433"  # Mapeia 1435 no host para 1433 no container
+      - "1435:1433"
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password"
@@ -70,7 +74,7 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"  # Mapeia 1435 no host para 1433 no container
+      - "5672:5672"
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
@@ -86,21 +90,42 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
-      - monitoring-network
+      - app-network
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
     networks:
-      - monitoring-network
+      - app-network
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin 
+
+  weave-scope:
+    image: weaveworks/scope:latest
+    container_name: weave-scope
+    ports:
+      - "4040:4040"
+    networks:
+      - app-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WEAVE_CLOUD_TOKEN=
+    privileged: true
+    depends_on:
+      - controlefluxocaixa.api
+      - controlefluxocaixa.worker.mensageria.transacao
+      - sql-primary
+      - sql-secondary
+      - rabbitmq
+      - prometheus
+      - grafana
+
 networks:
   app-network:
-    driver: bridge
-  monitoring-network:
     driver: bridge
 
 volumes:

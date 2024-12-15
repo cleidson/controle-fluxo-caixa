@@ -8,7 +8,7 @@ services:
       - ASPNETCORE_HTTPS_PORTS=8081
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - DB_SERVER=sql-primary
-      - DB_PORT=1433
+      - DB_PORT=1434
       - DB_USER=sa
       - DB_PASSWORD=YourStrong!Password
       - RABBITMQ_HOST=rabbitmq
@@ -19,28 +19,37 @@ services:
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    networks:
+      - app-network
 
   controlefluxocaixa.worker.mensageria.transacao:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DB_SERVER=sql-primary
-      - DB_PORT=1433
+      - DB_PORT=1434
       - DB_USER=sa
       - DB_PASSWORD=YourStrong!Password
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672 
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+    networks:
+      - app-network
 
   rabbitmq:
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - app-network
+
   prometheus:
     ports:
       - "9090:9090" # Painel do Prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - app-network
 
   grafana:
     ports:
@@ -48,3 +57,15 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - app-network
+
+  weave-scope:
+    environment:
+      - WEAVE_CLOUD_TOKEN=  # Deixe vazio para rodar localmente
+    ports:
+      - "4040:4040"  # Porta local para acessar o painel
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Acesso ao Docker para monitoramento
+    networks:
+      - app-network

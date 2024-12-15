@@ -2,8 +2,18 @@ global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: 'docker'
+  - job_name: 'api'
     static_configs:
-      - targets:
-          - rabbitmq:15672   # Monitorar RabbitMQ
-          - controlefluxocaixa.api:8080 # Monitorar API
+      - targets: ['controlefluxocaixa.api:8080']
+
+  - job_name: 'worker'
+    static_configs:
+      - targets: ['controlefluxocaixa.worker.mensageria.transacao:80']
+
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15672']
+
+  - job_name: 'sql-primary'
+    static_configs:
+      - targets: ['sql-primary:1433']
