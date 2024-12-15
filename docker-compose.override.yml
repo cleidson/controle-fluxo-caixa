@@ -10,7 +10,9 @@ services:
       - DB_SERVER=sql-primary
       - DB_PORT=1433
       - DB_USER=sa
-      - DB_PASSWORD=sa
+      - DB_PASSWORD=YourStrong!Password
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
     ports:
       - "8080:8080"  # Mapeia porta HTTP do container para localhost
       - "8081:8081"  # Mapeia porta HTTPS do container para localhost
@@ -24,6 +26,13 @@ services:
       - DB_SERVER=sql-primary
       - DB_PORT=1433
       - DB_USER=sa
-      - DB_PASSWORD=sa
+      - DB_PASSWORD=YourStrong!Password
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672 
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"

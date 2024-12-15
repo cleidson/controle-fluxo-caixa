@@ -15,6 +15,8 @@ services:
       - DB_PORT=1434
       - DB_USER=sa
       - DB_PASSWORD=YourStrong!Password
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
     networks:
       - app-network
     depends_on:
@@ -64,6 +66,18 @@ services:
       - sql-secondary-data:/var/opt/mssql
       - ./scripts/setup-secondary.sql:/docker-entrypoint-initdb.d/setup-secondary.sql
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Mapeia 1435 no host para 1433 no container
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app-network
+    
 networks:
   app-network:
     driver: bridge
