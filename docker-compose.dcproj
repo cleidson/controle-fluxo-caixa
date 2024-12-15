@@ -7,15 +7,17 @@
     <ProjectGuid>141ff519-582b-4dbb-9930-af0ceae76dbc</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="scripts\setup-primary.sql\**" />
+    <None Remove="scripts\setup-secondary.sql\**" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include="prometheus\prometheus.yml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="scripts\setup-primary.sql\" />
-    <Folder Include="scripts\setup-secondary.sql\" />
+    <None Include="scripts\setup-primary.sql" />
+    <None Include="scripts\setup-secondary.sql" />
   </ItemGroup>
 </Project>

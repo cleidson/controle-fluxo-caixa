@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   controlefluxocaixa.api:
     environment:
@@ -69,3 +67,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # Acesso ao Docker para monitoramento
     networks:
       - app-network
+
+  portainer:
+    ports:
+      - "9443:9443" # Porta do painel do Portainer (HTTPS)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Acesso ao Docker Socket
+      - portainer_data:/data # Volume para persistir dados do Portainer
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge

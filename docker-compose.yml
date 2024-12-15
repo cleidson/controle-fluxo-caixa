@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   controlefluxocaixa.api:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaapi
@@ -124,6 +122,18 @@ services:
       - prometheus
       - grafana
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - "9443:9443" # HTTPS para o Portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Acesso ao Docker Socket
+      - portainer_data:/data # Dados do Portainer
+    networks:
+      - app-network
+    restart: always
+
 networks:
   app-network:
     driver: bridge
@@ -131,3 +141,4 @@ networks:
 volumes:
   sql-primary-data:
   sql-secondary-data:
+  portainer_data:
