@@ -13,4 +13,8 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="scripts\setup-primary.sql\" />
+    <Folder Include="scripts\setup-secondary.sql\" />
+  </ItemGroup>
 </Project>
