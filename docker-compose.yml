@@ -77,9 +77,30 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - app-network
-    
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring-network
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-network
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin 
 networks:
   app-network:
+    driver: bridge
+  monitoring-network:
     driver: bridge
 
 volumes:

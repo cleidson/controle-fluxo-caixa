@@ -12,6 +12,7 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="prometheus\prometheus.yml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="scripts\setup-primary.sql\" />

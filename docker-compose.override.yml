@@ -36,3 +36,15 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+  prometheus:
+    ports:
+      - "9090:9090" # Painel do Prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    ports:
+      - "3000:3000" # Painel do Grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin

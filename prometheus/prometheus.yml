@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'docker'
+    static_configs:
+      - targets:
+          - rabbitmq:15672   # Monitorar RabbitMQ
+          - controlefluxocaixa.api:8080 # Monitorar API
