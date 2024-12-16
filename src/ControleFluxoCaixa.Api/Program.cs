@@ -63,7 +63,8 @@ namespace ControleFluxoCaixa.Api
             builder.Services.AddScoped<IExceptionHandler, TimeoutExceptionHandler>();
             builder.Services.AddScoped<IExceptionHandler, InvalidOperationExceptionHandler>();
             builder.Services.AddScoped<IExceptionHandler, GenericExceptionHandler>();
-            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            builder.Services.AddScoped(typeof(ITransactionalRepository<>), typeof(TransactionalRepository<>));
+            builder.Services.AddScoped(typeof(IReadOnlyDataRepository<>), typeof(ReadOnlyDataRepository<>));
 
             // Registro do ControleFluxoCaixaDbContext (Banco Primário)
             builder.Services.AddDbContext<ControleFluxoCaixaDbContext>(options =>

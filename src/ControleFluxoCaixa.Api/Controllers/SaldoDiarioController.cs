@@ -23,13 +23,7 @@ namespace ControleFluxoCaixa.Api.Controllers
             var consolidado = await _saldoDiarioService.GetConsolidadoDiarioAsync(usuarioId, data);
             return Ok(consolidado);
         }
-
-        [HttpPost("atualizar")]
-        public async Task<IActionResult> AtualizarSaldoDiario([FromBody] SaldoMessageDto request)
-        {
-            await _saldoDiarioService.AtualizarSaldoDiarioAsync(request.UsuarioId, request.SaldoAtual);
-            return Ok();
-        }
+ 
     }
 
 }

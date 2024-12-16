@@ -1,15 +1,16 @@
 ﻿using ControleFluxoCaixa.Core.Logic.Interfaces.Repository;
+using ControleFluxoCaixa.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace ControleFluxoCaixa.Infrastructure.Respositories
 {
-    public class Repository<T> : IRepository<T> where T : class
+    public class TransactionalRepository<T> : ITransactionalRepository<T> where T : class
     {
-        private readonly DbContext _context;
+        private readonly ControleFluxoCaixaDbContext _context; // <- Agora explícito
         private readonly DbSet<T> _dbSet;
 
-        public Repository(DbContext context)
+        public TransactionalRepository(ControleFluxoCaixaDbContext context)
         {
             _context = context;
             _dbSet = context.Set<T>();
@@ -36,12 +37,7 @@ namespace ControleFluxoCaixa.Infrastructure.Respositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task AddRangeAsync(IEnumerable<T> entities)
-        {
-            await _dbSet.AddRangeAsync(entities);
-            await _context.SaveChangesAsync();
-        }
-
+       
         public async Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
@@ -57,11 +53,6 @@ namespace ControleFluxoCaixa.Infrastructure.Respositories
                 await _context.SaveChangesAsync();
             }
         }
-
-        public async Task DeleteRangeAsync(IEnumerable<T> entities)
-        {
-            _dbSet.RemoveRange(entities);
-            await _context.SaveChangesAsync();
-        }
+         
     }
 }

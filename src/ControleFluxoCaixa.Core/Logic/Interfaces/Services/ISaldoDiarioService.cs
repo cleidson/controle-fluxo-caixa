@@ -10,6 +10,5 @@ namespace ControleFluxoCaixa.Core.Logic.Interfaces.Services
     public interface ISaldoDiarioService
     {
         Task<IEnumerable<SaldoDiario>> GetConsolidadoDiarioAsync(int usuarioId, DateTime data);
-        Task AtualizarSaldoDiarioAsync(int usuarioId, decimal valor);
     }
 }

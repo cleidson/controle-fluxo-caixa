@@ -3,64 +3,70 @@ using ControleFluxoCaixa.Core.Logic.Interfaces.Repository;
 using ControleFluxoCaixa.Core.Logic.Interfaces.Services;
 using ControleFluxoCaixa.Core.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ControleFluxoCaixa.Core.Logic.Services
 {
     public class TransacaoService : ITransacaoService
     {
-        private readonly IRepository<Transacao> _repository;
-        private readonly IRepository<SaldoDiario> _saldoRepository;
+        private readonly ITransactionalRepository<Transacao> _repository;
+        private readonly ITransactionalRepository<SaldoDiario> _saldoRepository;
 
-        public TransacaoService(IRepository<Transacao> repository, IRepository<SaldoDiario> saldoRepository)
+        public TransacaoService(ITransactionalRepository<Transacao> repository, ITransactionalRepository<SaldoDiario> saldoRepository)
         {
             _repository = repository;
             _saldoRepository = saldoRepository;
-        }
-
-        public async Task<IEnumerable<Transacao>> GetTransacoesAsync()
-        {
-            return await _repository.GetAllAsync();
-        }
-
-        public async Task<Transacao?> GetTransacaoByIdAsync(int id)
-        {
-            return await _repository.GetByIdAsync(id);
         }
 
         public async Task AddTransacaoAsync(Transacao transacao)
         {
             // Validação da transação
             if (transacao.Valor <= 0)
-            {
                 throw new TransacaoInvalidaException("O valor da transação deve ser maior que zero.");
-            }
 
-            // Regra de negócio: verificar saldo antes de débito
+            // Processar saldo, se necessário
             if (transacao.Tipo == "Debito")
-            {
-                var saldo = await _saldoRepository.FindAsync(s => s.UsuarioId == transacao.UsuarioId);
-                var saldoAtual = saldo.FirstOrDefault()?.SaldoAtual ?? 0;
+                await ValidarEAtualizarSaldo(transacao.UsuarioId, -transacao.Valor);
 
-                if (saldoAtual < transacao.Valor)
-                {
-                    throw new SaldoInsuficienteException("Saldo insuficiente para realizar a transação.");
-                }
-
-                // Atualizar o saldo
-                var saldoDiario = saldo.FirstOrDefault();
-                if (saldoDiario != null)
-                {
-                    saldoDiario.SaldoAtual -= transacao.Valor;
-                    await _saldoRepository.UpdateAsync(saldoDiario);
-                }
-            }
+            if (transacao.Tipo == "Credito")
+                await ValidarEAtualizarSaldo(transacao.UsuarioId, transacao.Valor);
 
             // Adicionar transação
             await _repository.AddAsync(transacao);
+        }
+
+        private async Task ValidarEAtualizarSaldo(int usuarioId, decimal ajuste)
+        {
+            // Obter saldo do usuário
+            var saldoDiario = (await _saldoRepository.FindAsync(s => s.UsuarioId == usuarioId)).FirstOrDefault();
+
+            if (ajuste < 0) // Débito
+            {
+                if (saldoDiario == null || saldoDiario.SaldoAtual + ajuste < 0)
+                    throw new SaldoInsuficienteException("Saldo insuficiente para realizar a transação.");
+            }
+
+            if (saldoDiario != null)
+            {
+                saldoDiario.SaldoAtual += ajuste;
+                await _saldoRepository.UpdateAsync(saldoDiario);
+            }
+            else
+            {
+                // Criar novo registro de saldo, caso não exista
+                await _saldoRepository.AddAsync(new SaldoDiario
+                {
+                    UsuarioId = usuarioId,
+                    SaldoAtual = ajuste,
+                    DataHora = DateTime.UtcNow
+                });
+            }
+        }
+
+        public async Task AtualizarSaldoDiarioAsync(int usuarioId, decimal valor)
+        {
+            await ValidarEAtualizarSaldo(usuarioId, valor);
         }
 
         public async Task UpdateTransacaoAsync(Transacao transacao)

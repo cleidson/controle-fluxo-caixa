@@ -11,9 +11,9 @@ namespace ControleFluxoCaixa.Core.Logic.Services
 {
     public class SaldoDiarioService : ISaldoDiarioService
     {
-        private readonly IRepository<SaldoDiario> _repository;
+        private readonly ITransactionalRepository<SaldoDiario> _repository;
 
-        public SaldoDiarioService(IRepository<SaldoDiario> repository)
+        public SaldoDiarioService(ITransactionalRepository<SaldoDiario> repository)
         {
             _repository = repository;
         }
@@ -24,25 +24,5 @@ namespace ControleFluxoCaixa.Core.Logic.Services
                 s.UsuarioId == usuarioId && s.DataHora.Date == data.Date);
         }
 
-        public async Task AtualizarSaldoDiarioAsync(int usuarioId, decimal valor)
-        {
-            var saldo = await _repository.FindAsync(s => s.UsuarioId == usuarioId);
-            var saldoAtual = saldo.FirstOrDefault();
-
-            if (saldoAtual != null)
-            {
-                saldoAtual.SaldoAtual += valor;
-                await _repository.UpdateAsync(saldoAtual);
-            }
-            else
-            {
-                await _repository.AddAsync(new SaldoDiario
-                {
-                    UsuarioId = usuarioId,
-                    SaldoAtual = valor,
-                    DataHora = DateTime.UtcNow
-                });
-            }
-        }
     }
 }
