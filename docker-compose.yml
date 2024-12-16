@@ -9,12 +9,18 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - DB_SERVER=sql-primary
       - DB_PORT=1434
       - DB_USER=sa
       - DB_PASSWORD=YourStrong!Password
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - app-network
     depends_on:
@@ -34,6 +40,8 @@ services:
       - DB_PASSWORD=YourStrong!Password
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
     networks:
       - app-network
     depends_on:
@@ -48,11 +56,11 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password"
-    networks:
-      - app-network
     volumes:
       - sql-primary-data:/var/opt/mssql
       - ./scripts/setup-primary.sql:/docker-entrypoint-initdb.d/setup-primary.sql
+    networks:
+      - app-network
 
   sql-secondary:
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -62,11 +70,11 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password"
-    networks:
-      - app-network
     volumes:
       - sql-secondary-data:/var/opt/mssql
       - ./scripts/setup-secondary.sql:/docker-entrypoint-initdb.d/setup-secondary.sql
+    networks:
+      - app-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -95,48 +103,39 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
-    networks:
-      - app-network
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin 
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - app-network
 
   weave-scope:
     image: weaveworks/scope:latest
     container_name: weave-scope
     ports:
       - "4040:4040"
-    networks:
-      - app-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WEAVE_CLOUD_TOKEN=
     privileged: true
-    depends_on:
-      - controlefluxocaixa.api
-      - controlefluxocaixa.worker.mensageria.transacao
-      - sql-primary
-      - sql-secondary
-      - rabbitmq
-      - prometheus
-      - grafana
+    networks:
+      - app-network
 
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
     ports:
-      - "9443:9443" # HTTPS para o Portainer
+      - "9443:9443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Acesso ao Docker Socket
-      - portainer_data:/data # Dados do Portainer
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: always
     networks:
       - app-network
-    restart: always
 
 networks:
   app-network:
     driver: bridge
+    name: app-network # Nome fixo para a rede
 
 volumes:
   sql-primary-data:
