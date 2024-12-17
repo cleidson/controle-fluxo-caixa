@@ -95,6 +95,7 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
                 {
                     retryCount++;
                     Console.WriteLine($"Tentativa {retryCount}: Conexão com RabbitMQ falhou. Tentando novamente em 5 segundos...");
+                    Console.WriteLine($"Erro {ex}");
                     await Task.Delay(5000);
                 }
                 catch (Exception ex)
