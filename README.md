@@ -85,9 +85,9 @@ Cliente (App/Web)
                           |
                           V
                  [Base Réplica (Somente Leitura)]
+                          ^
                           |
                           |
-                          V
                  [API de Consulta (Saldo Consolidado)]
 ```
 
