@@ -20,11 +20,7 @@ namespace ControleFluxoCaixa.Core.Logic.Services
         }
 
         public async Task AddTransacaoAsync(Transacao transacao)
-        {
-            // Validação da transação
-            if (transacao.Valor <= 0)
-                throw new TransacaoInvalidaException("O valor da transação deve ser maior que zero.");
-
+        { 
             // Processar saldo, se necessário
             if (transacao.Tipo == "Debito")
                 await ValidarEAtualizarSaldo(transacao.UsuarioId, -transacao.Valor);
@@ -41,14 +37,9 @@ namespace ControleFluxoCaixa.Core.Logic.Services
             // Obter saldo do usuário
             var saldoDiario = (await _saldoRepository.FindAsync(s => s.UsuarioId == usuarioId)).FirstOrDefault();
 
-            if (ajuste < 0) // Débito
-            {
-                if (saldoDiario == null || saldoDiario.SaldoAtual + ajuste < 0)
-                    throw new SaldoInsuficienteException("Saldo insuficiente para realizar a transação.");
-            }
-
             if (saldoDiario != null)
             {
+                // Permitir ajuste negativo
                 saldoDiario.SaldoAtual += ajuste;
                 await _saldoRepository.UpdateAsync(saldoDiario);
             }
@@ -58,11 +49,12 @@ namespace ControleFluxoCaixa.Core.Logic.Services
                 await _saldoRepository.AddAsync(new SaldoDiario
                 {
                     UsuarioId = usuarioId,
-                    SaldoAtual = ajuste,
+                    SaldoAtual = ajuste, // Permite que o ajuste negativo seja armazenado
                     DataHora = DateTime.UtcNow
                 });
             }
         }
+
 
         public async Task AtualizarSaldoDiarioAsync(int usuarioId, decimal valor)
         {

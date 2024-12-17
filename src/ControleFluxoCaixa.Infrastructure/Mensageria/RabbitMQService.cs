@@ -14,9 +14,6 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
     public class RabbitMQService : IMessageQueueService
     {
         private readonly ConnectionFactory _factory;
-        private readonly HashSet<string> _activeConsumers; // Armazena os nomes das filas já consumidas
-        private readonly object _lock = new(); // Para garantir thread safety
-
         public RabbitMQService(string hostname, string username, string password)
         {
             _factory = new ConnectionFactory
@@ -25,8 +22,6 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
                 UserName = username,
                 Password = password
             };
-
-            _activeConsumers = new HashSet<string>();
         }
 
         public async Task PublishAsync<T>(QueueName queueName, T message) where T : class

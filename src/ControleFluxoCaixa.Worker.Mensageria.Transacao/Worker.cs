@@ -54,6 +54,7 @@ namespace ControleFluxoCaixa.Worker.Mensageria.Transacao
                         }
                         catch (Exception ex)
                         {
+                            //TODO: Adicionar fila de tratamento futuramente.
                             _logger.LogError(ex, "Erro ao processar a transação: {descricao}", transacao.Descricao);
                             throw; // Rejeita a mensagem no RabbitMQ
                         }
