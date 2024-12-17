@@ -23,50 +23,67 @@ namespace ControleFluxoCaixa.Worker.Mensageria.Transacao
         {
             _logger.LogInformation("Worker iniciado às {time}", DateTimeOffset.Now);
 
-            try
+            const int delayEntreTentativasMs = 5000; // 5 segundos de espera entre retentativas
+            int tentativas = 0;
+
+            while (!stoppingToken.IsCancellationRequested)
             {
-                // Consome mensagens da fila FilaTransacao
-                await _messageQueueService.ConsumeAsync<TransacaoMessageDto>(QueueName.FilaTransacao, async transacao =>
+                try
                 {
-                    try
-                    {
-                        _logger.LogInformation("Mensagem recebida: {descricao} | Valor: {valor} | Tipo: {tipo}",
-                            transacao.Descricao, transacao.Valor, transacao.Tipo);
+                    _logger.LogInformation("Tentativa de conexão ao RabbitMQ (tentativa {tentativa})...", ++tentativas);
 
-                        // Processa a transação e persiste no banco
-                        await _transacaoService.AddTransacaoAsync(new ControleFluxoCaixa.Core.Models.Transacao
+                    // Consome mensagens da fila
+                    await _messageQueueService.ConsumeAsync<TransacaoMessageDto>(QueueName.FilaTransacao, async transacao =>
+                    {
+                        try
                         {
-                            UsuarioId = transacao.UsuarioId,
-                            Valor = transacao.Valor,
-                            Tipo = transacao.Tipo,
-                            Descricao = transacao.Descricao,
-                            DataHora = DateTime.Now
-                        });
-                        _logger.LogInformation("Transação processada com sucesso para o usuário {usuarioId}.",
-                            transacao.UsuarioId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Erro ao processar a transação: {descricao}", transacao.Descricao);
-                        throw; // Rejeita a mensagem no RabbitMQ
-                    }
-                });
+                            _logger.LogInformation("Mensagem recebida: {descricao} | Valor: {valor} | Tipo: {tipo}",
+                                transacao.Descricao, transacao.Valor, transacao.Tipo);
 
-                // Mantém o worker rodando
-                await Task.Delay(Timeout.Infinite, stoppingToken);
+                            // Processa a transação e persiste no banco
+                            await _transacaoService.AddTransacaoAsync(new ControleFluxoCaixa.Core.Models.Transacao
+                            {
+                                UsuarioId = transacao.UsuarioId,
+                                Valor = transacao.Valor,
+                                Tipo = transacao.Tipo,
+                                Descricao = transacao.Descricao,
+                                DataHora = DateTime.Now
+                            });
+
+                            _logger.LogInformation("Transação processada com sucesso para o usuário {usuarioId}.", transacao.UsuarioId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Erro ao processar a transação: {descricao}", transacao.Descricao);
+                            throw; // Rejeita a mensagem no RabbitMQ
+                        }
+                    });
+
+                    // Se o consumo foi bem-sucedido, resetar o contador de tentativas
+                    tentativas = 0;
+
+                    // Aguarda indefinidamente até nova mensagem ou interrupção
+                    await Task.Delay(Timeout.Infinite, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogInformation("Worker cancelado.");
+                    break;
+                }
+                catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException ex)
+                {
+                    _logger.LogWarning(ex, "Conexão com RabbitMQ falhou. Tentando novamente em {delayMs} ms...", delayEntreTentativasMs);
+                    await Task.Delay(delayEntreTentativasMs, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erro inesperado no Worker. Tentando novamente em {delayMs} ms...", delayEntreTentativasMs);
+                    await Task.Delay(delayEntreTentativasMs, stoppingToken);
+                }
             }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("Worker cancelado.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro inesperado no worker.");
-            }
-            finally
-            {
-                _logger.LogInformation("Worker finalizado às {time}", DateTimeOffset.Now);
-            }
+
+            _logger.LogInformation("Worker finalizado às {time}", DateTimeOffset.Now);
         }
+
     }
 }

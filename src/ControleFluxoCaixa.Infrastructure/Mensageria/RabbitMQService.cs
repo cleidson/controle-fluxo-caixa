@@ -14,6 +14,8 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
     public class RabbitMQService : IMessageQueueService
     {
         private readonly ConnectionFactory _factory;
+        private readonly HashSet<string> _activeConsumers; // Armazena os nomes das filas já consumidas
+        private readonly object _lock = new(); // Para garantir thread safety
 
         public RabbitMQService(string hostname, string username, string password)
         {
@@ -23,35 +25,25 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
                 UserName = username,
                 Password = password
             };
+
+            _activeConsumers = new HashSet<string>();
         }
 
         public async Task PublishAsync<T>(QueueName queueName, T message) where T : class
         {
-            string queue = queueName.ToString(); // Converte o Enum para string
+            string queue = queueName.ToString();
 
-            // Criando conexão e canal assíncronos
+            // Conexão e canal
             await using var connection = await _factory.CreateConnectionAsync();
             await using var channel = await connection.CreateChannelAsync();
 
-            // Declarando a fila (idempotente, cria caso não exista)
-            await channel.QueueDeclareAsync(
-                queue: queue,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
+            // Declaração da fila
+            await channel.QueueDeclareAsync(queue, true, false, false, null);
 
-            // Serializando o objeto para JSON
+            // Serializa e publica a mensagem
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+            var properties = new BasicProperties { DeliveryMode = DeliveryModes.Persistent };
 
-            // Criando as propriedades básicas (mensagem persistente)
-            var properties = new BasicProperties
-            {
-                DeliveryMode = DeliveryModes.Persistent
-            };
-
-            // Publicando a mensagem
             await channel.BasicPublishAsync(
                 exchange: "",
                 routingKey: queue,
@@ -60,51 +52,63 @@ namespace ControleFluxoCaixa.Infrastructure.Mensageria
                 body: body
             );
 
-            Console.WriteLine($"Mensagem publicada com sucesso para a fila '{queue}': {JsonSerializer.Serialize(message)}");
+            Console.WriteLine($"Mensagem publicada na fila '{queue}': {JsonSerializer.Serialize(message)}");
         }
 
         public async Task ConsumeAsync<T>(QueueName queueName, Func<T, Task> onMessageReceived) where T : class
         {
-            var connection = await _factory.CreateConnectionAsync();
-            var channel = await connection.CreateChannelAsync();
+            var queue = queueName.ToString();
+            int retryCount = 0;
 
-            await channel.QueueDeclareAsync(
-                queue: queueName.ToString(),
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null
-            );
-
-            var consumer = new AsyncEventingBasicConsumer(channel);
-
-            consumer.ReceivedAsync += async (model, ea) =>
+            while (true)
             {
                 try
                 {
-                    var body = ea.Body.ToArray();
-                    var message = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(body));
+                    // Tentar conexão
+                    var connection = await _factory.CreateConnectionAsync();
+                    var channel = await connection.CreateChannelAsync();
 
-                    if (message != null)
+                    await channel.QueueDeclareAsync(queue, true, false, false, null);
+
+                    var consumer = new AsyncEventingBasicConsumer(channel);
+                    consumer.ReceivedAsync += async (model, ea) =>
                     {
-                        await onMessageReceived(message);
-                        await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
-                    }
+                        try
+                        {
+                            var body = ea.Body.ToArray();
+                            var message = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(body));
+
+                            if (message != null)
+                            {
+                                await onMessageReceived(message);
+                                await channel.BasicAckAsync(ea.DeliveryTag, false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Erro ao processar mensagem: {ex.Message}");
+                            await channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                        }
+                    };
+
+                    await channel.BasicConsumeAsync(queue, false, $"{queue}-consumer-{Guid.NewGuid()}", consumer);
+
+                    Console.WriteLine($"Consumidor conectado para a fila '{queue}'.");
+                    break;
+                }
+                catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException ex)
+                {
+                    retryCount++;
+                    Console.WriteLine($"Tentativa {retryCount}: Conexão com RabbitMQ falhou. Tentando novamente em 5 segundos...");
+                    await Task.Delay(5000);
                 }
                 catch (Exception ex)
                 {
-                    await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
-                    Console.WriteLine($"Erro ao processar mensagem: {ex.Message}");
+                    Console.WriteLine($"Erro inesperado: {ex.Message}");
+                    throw;
                 }
-            };
-
-            await channel.BasicConsumeAsync(
-                queue: queueName.ToString(),
-                autoAck: false, // Controle manual de confirmação
-                consumer: consumer
-            );
-
-            Console.WriteLine($"Consumindo mensagens da fila '{queueName}'.");
+            }
         }
+
     }
 }
