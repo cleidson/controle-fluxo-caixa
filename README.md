@@ -75,12 +75,12 @@ Cliente (App/Web)
    |---> [API de Transação]
                 |
                 |--> [Message Broker (Fila Transação)]
-                |         |
-                |         V
-                |    [Consumer (Processador)]
-                |         |
-                |         V
-                |--> [Base Principal (SQL)]
+                          |
+                          V
+                     [Consumer (Processador)]
+                          |
+                          V
+                   [Base Principal (SQL)]
                           |
                           |
                           V
