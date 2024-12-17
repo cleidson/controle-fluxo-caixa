@@ -9,22 +9,18 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
-      - DB_SERVER=sql-primary
-      - DB_PORT=1434
-      - DB_USER=sa
+      - DB_SERVER=postgres-primary
+      - DB_PORT=5432
+      - DB_USER=postgres
       - DB_PASSWORD=YourStrong!Password
+      - DB_DATABASE=controlefluxocaixa
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - app-network
     depends_on:
-      - sql-primary
+      - postgres-primary
       - rabbitmq
 
   controlefluxocaixa.worker.mensageria.transacao:
@@ -34,47 +30,36 @@ services:
       dockerfile: src/ControleFluxoCaixa.Worker.Mensageria.Transacao/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - DB_SERVER=sql-primary
-      - DB_PORT=1434
-      - DB_USER=sa
+      - DB_SERVER=postgres-primary
+      - DB_PORT=5432
+      - DB_USER=postgres
       - DB_PASSWORD=YourStrong!Password
+      - DB_DATABASE=controlefluxocaixa
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
     networks:
       - app-network
     depends_on:
-      - sql-primary
+      - postgres-primary
       - rabbitmq
 
-  sql-primary:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql_primary
-    ports:
-      - "1434:1433"
+  postgres-primary:
+    image: postgres:15
+    container_name: postgres_primary
     environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Password"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: YourStrong!Password
+      POSTGRES_DB: controlefluxocaixa
+    ports:
+      - "5432:5432"
     volumes:
-      - sql-primary-data:/var/opt/mssql
-      - ./scripts/setup-primary.sql:/docker-entrypoint-initdb.d/setup-primary.sql
+      - postgres-primary-data:/var/lib/postgresql/data
     networks:
       - app-network
-
-  sql-secondary:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql_secondary
-    ports:
-      - "1435:1433"
-    environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Password"
-    volumes:
-      - sql-secondary-data:/var/opt/mssql
-      - ./scripts/setup-secondary.sql:/docker-entrypoint-initdb.d/setup-secondary.sql
-    networks:
-      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -83,8 +68,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - app-network
 
@@ -135,9 +120,7 @@ services:
 networks:
   app-network:
     driver: bridge
-    name: app-network # Nome fixo para a rede
 
 volumes:
-  sql-primary-data:
-  sql-secondary-data:
+  postgres-primary-data:
   portainer_data:

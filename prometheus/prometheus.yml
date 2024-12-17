@@ -1,19 +1,39 @@
+---
 global:
   scrape_interval: 5s
-
 scrape_configs:
-  - job_name: 'api'
+  - job_name: api
     static_configs:
-      - targets: ['controlefluxocaixa.api:8080']
-
-  - job_name: 'worker'
+      - targets:
+          - controlefluxocaixa.api:8080
+  - job_name: worker
     static_configs:
-      - targets: ['controlefluxocaixa.worker.mensageria.transacao:80']
-
-  - job_name: 'rabbitmq'
+      - targets:
+          - controlefluxocaixa.worker.mensageria.transacao:8080
+  - job_name: rabbitmq
+    metrics_path: /metrics
     static_configs:
-      - targets: ['rabbitmq:15672']
-
-  - job_name: 'sql-primary'
+      - targets:
+          - rabbitmq:15672
+  - job_name: postgres-primary
     static_configs:
-      - targets: ['sql-primary:1433']
+      - targets:
+          - postgres-primary:9187
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: instance
+        replacement: PostgreSQL Primary
+  - job_name: postgres-secondary
+    static_configs:
+      - targets:
+          - postgres-secondary:9187
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: instance
+        replacement: PostgreSQL Replica
+  - job_name: docker
+    static_configs:
+      - targets:
+          - weave-scope:4040

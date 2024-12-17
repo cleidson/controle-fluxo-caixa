@@ -33,16 +33,16 @@ namespace ControleFluxoCaixa.Worker.Mensageria.Transacao
 
                     // Registro do ControleFluxoCaixaDbContext (Banco Primário)
                     services.AddDbContext<ControleFluxoCaixaDbContext>(options =>
-                        options.UseSqlServer(
+                        options.UseNpgsql(
                             context.Configuration.GetConnectionString("PrincipalDB"),
-                            sqlOptions =>
+                            npgsqlOptions =>
                             {
-                                sqlOptions.EnableRetryOnFailure();
-                                sqlOptions.CommandTimeout(60);
-                                sqlOptions.MaxBatchSize(100);
+                                npgsqlOptions.EnableRetryOnFailure(); // Retry automático em caso de falhas temporárias
+                                npgsqlOptions.CommandTimeout(60);     // Timeout de 60 segundos
                             }));
 
-              
+
+                    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
                     // Registro dos repositórios genéricos
                     services.AddScoped(typeof(ITransactionalRepository<>), typeof(TransactionalRepository<>));
                     services.AddScoped(typeof(IReadOnlyDataRepository<>), typeof(ReadOnlyDataRepository<>));

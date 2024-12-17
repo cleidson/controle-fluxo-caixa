@@ -8,13 +8,12 @@ using ControleFluxoCaixa.Core.Logic.Interfaces.Repository;
 using ControleFluxoCaixa.Infrastructure.Respositories;
 using ControleFluxoCaixa.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
+using Npgsql;
 
 namespace ControleFluxoCaixa.Api
 {
     public class Program
     {
-       
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -68,25 +67,25 @@ namespace ControleFluxoCaixa.Api
 
             // Registro do ControleFluxoCaixaDbContext (Banco Primário)
             builder.Services.AddDbContext<ControleFluxoCaixaDbContext>(options =>
-                options.UseSqlServer(
+                options.UseNpgsql(
                     builder.Configuration.GetConnectionString("PrincipalDB"),
-                    sqlOptions =>
+                    npgsqlOptions =>
                     {
-                        sqlOptions.EnableRetryOnFailure();
-                        sqlOptions.CommandTimeout(60);
-                        sqlOptions.MaxBatchSize(100);
+                        npgsqlOptions.EnableRetryOnFailure();
+                        npgsqlOptions.CommandTimeout(60);
+                        npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     }));
 
             // Registro do ControleFluxoCaixaReadOnlyDbContext (Banco Secundário - Réplica)
             builder.Services.AddDbContext<ControleFluxoCaixaReadOnlyDbContext>(options =>
-                options.UseSqlServer(
+                options.UseNpgsql(
                     builder.Configuration.GetConnectionString("ReplicaDB"),
-                    sqlOptions =>
+                    npgsqlOptions =>
                     {
-                        sqlOptions.EnableRetryOnFailure();
-                        sqlOptions.CommandTimeout(60);
+                        npgsqlOptions.EnableRetryOnFailure();
+                        npgsqlOptions.CommandTimeout(60);
                     })
-                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
             var app = builder.Build();
 
@@ -94,15 +93,29 @@ namespace ControleFluxoCaixa.Api
             if (app.Environment.IsDevelopment())
             {
                 using (var scope = app.Services.CreateScope())
-                { 
+                {
                     var dbContext = scope.ServiceProvider.GetRequiredService<ControleFluxoCaixaDbContext>();
-                    dbContext.Database.Migrate();
+
+                    try
+                    {
+                        Console.WriteLine("Aplicando migrations...");
+                        dbContext.Database.Migrate();
+                        Console.WriteLine("Migrations aplicadas com sucesso!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Falha ao aplicar migrations: {ex.Message}");
+                    }
 
                     // Validar conexão com o banco secundário
                     var readOnlyDbContext = scope.ServiceProvider.GetRequiredService<ControleFluxoCaixaReadOnlyDbContext>();
                     if (readOnlyDbContext.Database.CanConnect())
                     {
                         Console.WriteLine("Conexão com o banco de leitura estabelecida com sucesso.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Não foi possível conectar ao banco de leitura.");
                     }
                 }
             }
@@ -129,7 +142,7 @@ namespace ControleFluxoCaixa.Api
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Controle Fluxo de Caixa API v1");
                 });
             }
-
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             // Configurar CORS
             app.UseCors("AllowAllOrigins");
 
