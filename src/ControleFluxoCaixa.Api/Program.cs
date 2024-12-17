@@ -9,6 +9,8 @@ using ControleFluxoCaixa.Infrastructure.Respositories;
 using ControleFluxoCaixa.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using ControleFluxoCaixa.Core.Logic.Interfaces.Services;
+using ControleFluxoCaixa.Core.Logic.Services;
 
 namespace ControleFluxoCaixa.Api
 {
@@ -64,6 +66,7 @@ namespace ControleFluxoCaixa.Api
             builder.Services.AddScoped<IExceptionHandler, GenericExceptionHandler>();
             builder.Services.AddScoped(typeof(ITransactionalRepository<>), typeof(TransactionalRepository<>));
             builder.Services.AddScoped(typeof(IReadOnlyDataRepository<>), typeof(ReadOnlyDataRepository<>));
+            builder.Services.AddScoped<ISaldoDiarioService, SaldoDiarioService>();
 
             // Registro do ControleFluxoCaixaDbContext (Banco Primário)
             builder.Services.AddDbContext<ControleFluxoCaixaDbContext>(options =>
