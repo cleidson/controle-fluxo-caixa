@@ -1,3 +1,4 @@
+---
 services:
   controlefluxocaixa.api:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaapi
@@ -5,8 +6,8 @@ services:
       context: .
       dockerfile: src/ControleFluxoCaixa.Api/Dockerfile
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - 8080:8080
+      - 8081:8081
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
@@ -22,7 +23,6 @@ services:
     depends_on:
       - postgres-primary
       - rabbitmq
-
   controlefluxocaixa.worker.mensageria.transacao:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaworkermensageriatransacao
     build:
@@ -42,7 +42,6 @@ services:
     depends_on:
       - postgres-primary
       - rabbitmq
-
   postgres-primary:
     image: postgres:15
     container_name: postgres_primary
@@ -54,73 +53,105 @@ services:
       - "5432:5432"
     volumes:
       - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: >
+      postgres 
+      -c wal_level=replica 
+      -c max_wal_senders=3 
+      -c max_replication_slots=3 
+      -c hot_standby=on 
+      -c hba_file=/etc/postgresql/pg_hba.conf
     networks:
       - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       retries: 5
-
+  
+  
+  postgres-secondary:
+    image: postgres:15
+    container_name: postgres_secondary
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: YourStrong!Password
+      POSTGRES_DB: controlefluxocaixa
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-secondary-data:/var/lib/postgresql/data
+    user: postgres
+    command: >
+      bash -c "
+      rm -rf /var/lib/postgresql/data/* &&
+      PGPASSWORD=YourStrong!Password pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U postgres -P -R &&
+      chmod -R 700 /var/lib/postgresql/data &&
+      postgres -c hot_standby=on"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+     
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - 5672:5672
+      - 15672:15672
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - app-network
-
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - 9090:9090
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - app-network
-
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3000:3000"
+      - 3000:3000
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - app-network
-
   weave-scope:
     image: weaveworks/scope:latest
     container_name: weave-scope
     ports:
-      - "4040:4040"
+      - 4040:4040
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true
     networks:
       - app-network
-
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
     ports:
-      - "9443:9443"
+      - 9443:9443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     restart: always
     networks:
       - app-network
-
 networks:
   app-network:
     driver: bridge
-
 volumes:
-  postgres-primary-data:
-  portainer_data:
+  postgres-primary-data: null
+  postgres-secondary-data: null
+  portainer_data: null
