@@ -25,7 +25,14 @@ namespace ControleFluxoCaixa.Infrastructure.Data.Configurations
                    .IsRequired();
 
             builder.Property(t => t.DataHora)
-                   .IsRequired();
+                   .IsRequired()
+                   .HasColumnType("timestamp without time zone")
+                   .HasConversion(
+                       v => v.ToUniversalTime(),
+                       v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                   );
+
+
 
             builder.Property(t => t.Descricao)
                    .HasMaxLength(250);

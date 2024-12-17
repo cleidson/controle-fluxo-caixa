@@ -25,7 +25,12 @@ namespace ControleFluxoCaixa.Infrastructure.Data.Configurations
                    .IsRequired();
 
             builder.Property(s => s.DataHora)
-                   .IsRequired();
+                   .IsRequired()
+                   .HasConversion(
+                       v => v.ToUniversalTime(),     // Ao salvar, converte para UTC
+                       v => DateTime.SpecifyKind(v, DateTimeKind.Utc) // Ao ler, define como UTC
+                   );
+
         }
     }
 }

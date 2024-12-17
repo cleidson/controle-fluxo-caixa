@@ -1,3 +1,4 @@
+---
 services:
   controlefluxocaixa.api:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaapi
@@ -5,28 +6,23 @@ services:
       context: .
       dockerfile: src/ControleFluxoCaixa.Api/Dockerfile
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - 8080:8080
+      - 8081:8081
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
-      - DB_SERVER=sql-primary
-      - DB_PORT=1434
-      - DB_USER=sa
+      - DB_SERVER=postgres-primary
+      - DB_PORT=5432
+      - DB_USER=postgres
       - DB_PASSWORD=YourStrong!Password
+      - DB_DATABASE=controlefluxocaixa
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     networks:
       - app-network
     depends_on:
-      - sql-primary
+      - postgres-primary
       - rabbitmq
-
   controlefluxocaixa.worker.mensageria.transacao:
     image: ${DOCKER_REGISTRY-}controlefluxocaixaworkermensageriatransacao
     build:
@@ -34,110 +30,128 @@ services:
       dockerfile: src/ControleFluxoCaixa.Worker.Mensageria.Transacao/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - DB_SERVER=sql-primary
-      - DB_PORT=1434
-      - DB_USER=sa
+      - DB_SERVER=postgres-primary
+      - DB_PORT=5432
+      - DB_USER=postgres
       - DB_PASSWORD=YourStrong!Password
+      - DB_DATABASE=controlefluxocaixa
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
     networks:
       - app-network
     depends_on:
-      - sql-primary
+      - postgres-primary
       - rabbitmq
-
-  sql-primary:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql_primary
-    ports:
-      - "1434:1433"
+  postgres-primary:
+    image: postgres:15
+    container_name: postgres_primary
     environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Password"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: YourStrong!Password
+      POSTGRES_DB: controlefluxocaixa
+    ports:
+      - "5432:5432"
     volumes:
-      - sql-primary-data:/var/opt/mssql
-      - ./scripts/setup-primary.sql:/docker-entrypoint-initdb.d/setup-primary.sql
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: >
+      postgres 
+      -c wal_level=replica 
+      -c max_wal_senders=3 
+      -c max_replication_slots=3 
+      -c hot_standby=on 
+      -c hba_file=/etc/postgresql/pg_hba.conf
     networks:
       - app-network
-
-  sql-secondary:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql_secondary
-    ports:
-      - "1435:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+  
+  
+  postgres-secondary:
+    image: postgres:15
+    container_name: postgres_secondary
     environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Password"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: YourStrong!Password
+      POSTGRES_DB: controlefluxocaixa
+    ports:
+      - "5433:5432"
     volumes:
-      - sql-secondary-data:/var/opt/mssql
-      - ./scripts/setup-secondary.sql:/docker-entrypoint-initdb.d/setup-secondary.sql
+      - postgres-secondary-data:/var/lib/postgresql/data
+    user: postgres
+    command: >
+      bash -c "
+      rm -rf /var/lib/postgresql/data/* &&
+      PGPASSWORD=YourStrong!Password pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U postgres -P -R &&
+      chmod -R 700 /var/lib/postgresql/data &&
+      postgres -c hot_standby=on"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
     networks:
       - app-network
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+     
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - 5672:5672
+      - 15672:15672
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - app-network
-
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - 9090:9090
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - app-network
-
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3000:3000"
+      - 3000:3000
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - app-network
-
   weave-scope:
     image: weaveworks/scope:latest
     container_name: weave-scope
     ports:
-      - "4040:4040"
+      - 4040:4040
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true
     networks:
       - app-network
-
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
     ports:
-      - "9443:9443"
+      - 9443:9443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     restart: always
     networks:
       - app-network
-
 networks:
   app-network:
     driver: bridge
-    name: app-network # Nome fixo para a rede
-
 volumes:
-  sql-primary-data:
-  sql-secondary-data:
-  portainer_data:
+  postgres-primary-data: null
+  postgres-secondary-data: null
+  portainer_data: null

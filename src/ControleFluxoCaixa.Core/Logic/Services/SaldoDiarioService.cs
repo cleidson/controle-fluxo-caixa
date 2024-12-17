@@ -11,9 +11,9 @@ namespace ControleFluxoCaixa.Core.Logic.Services
 {
     public class SaldoDiarioService : ISaldoDiarioService
     {
-        private readonly ITransactionalRepository<SaldoDiario> _repository;
+        private readonly IReadOnlyDataRepository<SaldoDiario> _repository;
 
-        public SaldoDiarioService(ITransactionalRepository<SaldoDiario> repository)
+        public SaldoDiarioService(IReadOnlyDataRepository<SaldoDiario> repository)
         {
             _repository = repository;
         }

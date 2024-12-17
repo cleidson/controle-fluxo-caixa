@@ -17,6 +17,9 @@
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include="prometheus\prometheus.yml" />
+    <None Include="scripts\pg_hba.conf" />
+    <None Include="scripts\replica-config.sh" />
+    <None Include="scripts\postgresql.conf" />
     <None Include="scripts\setup-primary.sql" />
     <None Include="scripts\setup-secondary.sql" />
   </ItemGroup>
