@@ -54,7 +54,6 @@ namespace ControleFluxoCaixa.Worker.Mensageria.Transacao
                     services.AddHostedService<Worker>();
                 })
                 .Build();
-
             host.Run();
         }
     }

@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/mssql/server:2019-latest
+
+USER root
+COPY ./scripts/entrypoint-primary.sh /usr/config/entrypoint-primary.sh
+COPY ./scripts/setup-primary.sql /var/opt/mssql/backup/setup-primary.sql
+RUN chmod +x /usr/config/entrypoint-primary.sh
+USER mssql
+
+CMD ["/bin/bash", "/usr/config/entrypoint-primary.sh"]

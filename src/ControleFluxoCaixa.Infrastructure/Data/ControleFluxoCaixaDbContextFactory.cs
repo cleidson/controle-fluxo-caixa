@@ -3,12 +3,6 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 
-namespace ControleFluxoCaixa.Infrastructure.Data
-{
-  using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
-using System.IO;
 
 namespace ControleFluxoCaixa.Infrastructure.Data
 {
@@ -31,4 +25,3 @@ namespace ControleFluxoCaixa.Infrastructure.Data
     }
 }
 
-}
